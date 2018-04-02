@@ -14,7 +14,7 @@ Simple script for deep Windows system cleaning. Can clean
  - Run commands like below
 
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted
 .\Cleaner.ps1
 ```
 Script ready to use
