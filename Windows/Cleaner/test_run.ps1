@@ -1,5 +1,5 @@
-﻿. ".\Cleaner.ps1"
-$ComputerList = ("starnt14")
+﻿. ".\Cleaner.ps1" -Local 1
+$ComputerList = ("starra1")
 Clear-Host
 Foreach ($item in $ComputerList){
 
@@ -28,7 +28,7 @@ If($ComputerOBJ.OrigFreeSpace -eq $False){
 }
 
 Clean-path -Path 'C:\windows\Temp' -ComputerOBJ $ComputerOBJ
-Clean-path -Path 'C:\Temp' -ComputerOBJ $ComputerOBJ
+
 Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportArchive' -ComputerOBJ $ComputerOBJ
 Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportQueue' -ComputerOBJ $ComputerOBJ
 Clean-path -Path 'C:\ServiceProfiles\LocalService\AppData\Local\Temp' -ComputerOBJ $ComputerOBJ
@@ -40,11 +40,11 @@ Get-AllUserProfiles -ComputerOBJ $ComputerOBJ
 Write-Host "All user profiles have been processed" -ForegroundColor Green
 
 #TestFor-SymantecPath -ComputerOBJ $ComputerOBJ
-Run-CleanMGR -ComputerOBJ $ComputerOBJ
-Run-DISM -ComputerOBJ $ComputerOBJ
-Process-IISLogs -ComputerOBJ $ComputerOBJ
+#Run-CleanMGR -ComputerOBJ $ComputerOBJ
+#Run-DISM -ComputerOBJ $ComputerOBJ
+#Process-IISLogs -ComputerOBJ $ComputerOBJ
 Set-WindowsUpdateService -ComputerOBJ $ComputerOBJ
-Get-Recyclebin -ComputerOBJ $ComputerOBJ
+#Get-Recyclebin -ComputerOBJ $ComputerOBJ
 
 $ComputerOBJ = Get-FinalFreeSpace -ComputerOBJ $ComputerOBJ
 $SpaceRecovered = $($Computerobj.finalfreespace) - $($ComputerOBJ.OrigFreeSpace)

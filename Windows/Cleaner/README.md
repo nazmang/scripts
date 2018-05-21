@@ -23,7 +23,7 @@ Script ready to use
 How to clean several computers? Just add computer names to array.
 ```powershell
 
-$ComputerList = ("starnt4","starnt5","starnt6","starnt9","starra2", "starra3","nypc804")
+$ComputerList = ("starnt4","starnt5","starnt6","starnt9","starra2", "starra3", "nypc804")
 ```
 And run lines below. This will clean all necessary directories and files. 
 ```powershell
@@ -85,6 +85,15 @@ Else{
 }
 }
 ```
+
+##### 05/21/2018
+ - Added SCCM cache cleaning
+ - Added Mozilla Firefox cache cleaning
+ - Fixed Google Chrome chache cleaning (wasn't working)
+ 
+##### TODO
+ - CommandLine parsing 
+ - Make 'Downloads' path cleaning optional
 
 ##### To be continued...
 

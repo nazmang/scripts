@@ -588,6 +588,29 @@ Function Set-WindowsUpdateService{
                 }
             }
 
+            Try{
+                $ESENTResult = esentutl /d $Env:windir\SoftwareDistribution\Datastore\datastore.edb
+                $ErrorActionPreference = 'SilentlyContinue'
+                Write-Output $ESENTResult
+                # SCCM cache cleaner
+                $MinDays = 21
+                $UIResourceMgr = New-Object -ComObject UIResource.UIResourceMgr
+                $Cache = $UIResourceMgr.GetCacheInfo()
+                Write-Host "Cleanining SCCM cache... Obsolete items found: " -ForegroundColor Yellow ($Cache.GetCacheElements() |
+                Where-object {[datetime]$_.LastReferenceTime -lt (Get-date).adddays(-$mindays)} |
+                Measure-object).Count
+
+                $Cache.GetCacheElements() |
+                Where-object {[datetime]$_.LastReferenceTime -lt (Get-date).adddays(-$mindays)} |
+                Foreach {
+                    $Cache.DeleteCacheElement($_.CacheElementID)
+                }
+            }
+            Catch [System.Exception]{
+                $ErrorActionPreference = 'SilentlyContinue'
+                Write-output $False
+            }
+
         
         } #Download $ComputerOBJ.Credential
         If($Result -eq $True){
@@ -616,22 +639,30 @@ Function Set-WindowsUpdateService{
                 Write-Host "Unable to stop the windows update service. No files were deleted." -ForegroundColor Red
             }
         }
-    }
-    $Result = Invoke-Command -ComputerName $ComputerOBJ.ComputerName -ScriptBlock { 
-                
-                $ErrorActionPreference = 'Stop'
-                Try{
-                    $ESENTResult = esentutl /d $Env:windir\SoftwareDistribution\Datastore\datastore.edb
-                    $ErrorActionPreference = 'SilentlyContinue'
-                    Write-Output $ESENTResult
-                }
-                Catch [System.Exception]{
-                    $ErrorActionPreference = 'SilentlyContinue'
-                    Write-output $False
-                }
-    }
-     
 
+        Try{
+                $ESENTResult = esentutl /d $Env:windir\SoftwareDistribution\Datastore\datastore.edb
+                $ErrorActionPreference = 'SilentlyContinue'
+                Write-Output $ESENTResult
+                # SCCM cache cleaner
+                $MinDays = 21
+                $UIResourceMgr = New-Object -ComObject UIResource.UIResourceMgr
+                $Cache = $UIResourceMgr.GetCacheInfo()
+                Write-Host "Cleanining SCCM cache... Obsolete items found: " -ForegroundColor Yellow ($Cache.GetCacheElements() |
+                Where-object {[datetime]$_.LastReferenceTime -lt (Get-date).adddays(-$mindays)} |
+                Measure-object).Count
+
+                $Cache.GetCacheElements() |
+                Where-object {[datetime]$_.LastReferenceTime -lt (Get-date).adddays(-$mindays)} |
+                Foreach {
+                    $Cache.DeleteCacheElement($_.CacheElementID)
+                }
+        }
+        Catch [System.Exception]{
+                $ErrorActionPreference = 'SilentlyContinue'
+                Write-output $False
+        }
+    }   
 }
 
 Function Get-AllUserProfiles{
@@ -671,12 +702,14 @@ Function Get-AllUserProfiles{
                 Write-host "Starting Profile : $Profile" -ForegroundColor Yellow
                 $TempPath = "C:\Users\$Profile\AppData\Local\Temp"
                 $DownloadPath = "C:\Users\$Profile\Downloads"
-                Write-host "Cleaning Google Chrome cache..." -ForegroundColor Yellow
-                $GoogleChromeCache = "C:\Users\$Profile\AppData\Local\Google\Chrome\User Data\Default\Cache"
-                #$FirefoxCache = "C:\Users\$Profile\AppData\Local\Mozilla\Firefox\Profiles\"
-
                 Clean-Path -Path $TempPath -ComputerOBJ $ComputerOBJ
                 Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ
+                Write-host "Cleaning Google Chrome cache..." -ForegroundColor Yellow
+                $GoogleChromeCache = "C:\Users\$Profile\AppData\Local\Google\Chrome\User Data\Default\Cache"
+                Clean-Path -Path $GoogleChromeCache -ComputerOBJ $ComputerOBJ
+                Write-host "Cleaning Mozilla Firefox cache..." -ForegroundColor Yellow
+                $FirefoxCache = "C:\Users\$Profile\AppData\Local\Mozilla\Firefox\Profiles\"
+                Clean-Path -Path $FirefoxCache -ComputerOBJ $ComputerOBJ               
             }
         }
     }
@@ -695,9 +728,14 @@ Function Get-AllUserProfiles{
                     Write-host "Starting Profile : $Profile" -ForegroundColor Yellow
                     $TempPath = "C:\Users\$Profile\AppData\Local\Temp"
                     $DownloadPath = "C:\Users\$Profile\Downloads"
-
                     Clean-Path -Path $TempPath -ComputerOBJ $ComputerOBJ
                     Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ
+                    Write-host "Cleaning Google Chrome cache..." -ForegroundColor Yellow
+                    $GoogleChromeCache = "C:\Users\$Profile\AppData\Local\Google\Chrome\User Data\Default\Cache"
+                    Clean-Path -Path $GoogleChromeCache -ComputerOBJ $ComputerOBJ
+                    Write-host "Cleaning Mozilla Firefox cache..." -ForegroundColor Yellow
+                    $FirefoxCache = "C:\Users\$Profile\AppData\Local\Mozilla\Firefox\Profiles\"
+                    Clean-Path -Path $FirefoxCache -ComputerOBJ $ComputerOBJ          
                 }
             }
             Else{
