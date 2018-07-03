@@ -1,90 +1,44 @@
 # Cleaner
 
-Simple script for deep Windows system cleaning. Can clean 
+Simple script for deep Windows system cleaning. Can clean:
 
-  - All user profile directories (temp files, browsers cache etc)
-  - Windows Update downloaded files and shrink updates database
-  - DISM 
-  - IIS logs
-  - Symantec paths (need to test)
+  - All user profile directories (temp files, browsers cache etc).
+  - Windows temporary files and directories.
+  - Windows Update downloaded files and shrink updates database using DISM. 
+  - IIS logs.
+  - Symantec paths (under test).
 
 ### Usage
- - Copy or clone script to some dir
+ - Copy or clone script to some directory
+ ```shell
+git clone https://bitbucket.imagine-sw.com:7990/scm/~eugenena/scripts.git
+ ```
  - Run PowerShell as user with administrative privilegies
- - Run commands like below
+ - Run commands like in example
 
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy Unrestricted
-.\Cleaner.ps1
-```
-Script ready to use
 
 #### Example
-How to clean several computers? Just add computer names to array.
+
 ```powershell
-
-$ComputerList = ("starnt4","starnt5","starnt6","starnt9","starra2", "starra3", "nypc804")
+cd projects/scripts/Windows/Cleaner
+.\Cleaner.ps1 -computer1,computer2,computerN -CleanRecyclebin -RunCleanMGR -RunDISM -CleanSymantec-CleanIIS -CleanDownloads 
 ```
-And run lines below. This will clean all necessary directories and files. 
+**Note:** if you got* "... file is not digitally signed..."* error, please run code below
 ```powershell
-Clear-Host
-Foreach ($item in $ComputerList){
-
-$ComputerOBJ = New-object PSObject -Property @{
-            ComputerName = $item
-            Remote = $True
-        }
-
-Write-Host "Cleaning host " $ComputerOBJ.ComputerName -ForegroundColor Green 
-
-If($ComputerOBJ.Remote -eq $true){
-    $ComputerOBJ = Test-PSRemoting -ComputerOBJ $ComputerOBJ
-    If($ComputerOBJ.PSRemoting -eq $False){
-        Read-Host
-        exit;
-    }
-}
-
-$ComputerOBJ = Get-OrigFreeSpace -ComputerOBJ $ComputerOBJ
-
-If($ComputerOBJ.OrigFreeSpace -eq $False){
-    Read-host
-    exit;
-}
-
-Clean-path -Path 'C:\windows\Temp' -ComputerOBJ $ComputerOBJ
-Clean-path -Path 'C:\Temp' -ComputerOBJ $ComputerOBJ
-Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportArchive' -ComputerOBJ $ComputerOBJ
-Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportQueue' -ComputerOBJ $ComputerOBJ
-Clean-path -Path 'C:\ServiceProfiles\LocalService\AppData\Local\Temp' -ComputerOBJ $ComputerOBJ
-
-Write-Host "All Temp Paths have been cleaned" -ForegroundColor Green
-
-Write-Host "Beginning User Profile Cleanup" -ForegroundColor Yellow
-Get-AllUserProfiles -ComputerOBJ $ComputerOBJ
-Write-Host "All user profiles have been processed" -ForegroundColor Green
-
-#TestFor-SymantecPath -ComputerOBJ $ComputerOBJ
-Run-CleanMGR -ComputerOBJ $ComputerOBJ
-Run-DISM -ComputerOBJ $ComputerOBJ
-Process-IISLogs -ComputerOBJ $ComputerOBJ
-Set-WindowsUpdateService -ComputerOBJ $ComputerOBJ
-Get-Recyclebin -ComputerOBJ $ComputerOBJ
-
-$ComputerOBJ = Get-FinalFreeSpace -ComputerOBJ $ComputerOBJ
-$SpaceRecovered = $($Computerobj.finalfreespace) - $($ComputerOBJ.OrigFreeSpace)
-
-If($SpaceRecovered -lt 0){
-    Write-Host "Less than a gig of Free Space was recovered." -ForegroundColor Yellow
-}
-ElseIf($SpaceRecovered -eq 0){
-    Write-host "No Space Was saved :("
-}
-Else{
-    Write-host "Space Recovered : $SpaceRecovered GB" -ForegroundColor Green
-}
-}
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted
 ```
+#### Parameters
+ - ***CleanRecyclebin*** - will clean **Recycle Bin**. Default *true*.
+ - ***RunCleanMGR*** - will run **Windows Clean Manager**. Default *false*.
+ - ***RunDISM*** - run **dism** command to shrink Windows Update database. Default *false*.
+ - ***CleanSymantec*** - cleans Symantec AV logs.  Default *false*.
+ - ***CleanIIS*** - cleans **IIS** logs. Requires **IIS** role being installed. Default *false*.
+ - ***CleanDownloads*** - cleans content of **Downloads** folder for each user profile in the system. Default *false*.
+------------
+
+##### 07/03/2018
+ - Added commandline support
+ - Minor code fixes
 
 ##### 05/21/2018
  - Added SCCM cache cleaning
@@ -92,9 +46,7 @@ Else{
  - Fixed Google Chrome chache cleaning (wasn't working)
  
 ##### TODO
- - CommandLine parsing 
- - Make 'Downloads' path cleaning optional
+ - Show help if no params
 
-##### To be continued...
 
 

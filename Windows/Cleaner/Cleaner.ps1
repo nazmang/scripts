@@ -1,4 +1,14 @@
 ﻿#
+param (
+    [parameter(Mandatory=$true)][array] $ComputerList,
+    [switch] $CleanRecyclebin = $true,
+    [switch] $RunCleanMGR = $false,
+    [switch] $RunDISM = $false,
+    [switch] $CleanSymantec = $false,
+    [switch] $CleanIIS = $false, 
+    [switch] $CleanDownloads = $false
+)
+
 
 Function Get-Recyclebin{
     [CmdletBinding()]
@@ -703,7 +713,7 @@ Function Get-AllUserProfiles{
                 $TempPath = "C:\Users\$Profile\AppData\Local\Temp"
                 $DownloadPath = "C:\Users\$Profile\Downloads"
                 Clean-Path -Path $TempPath -ComputerOBJ $ComputerOBJ
-                Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ
+                If($CleanDownloads -eq $true) { Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ}
                 Write-host "Cleaning Google Chrome cache..." -ForegroundColor Yellow
                 $GoogleChromeCache = "C:\Users\$Profile\AppData\Local\Google\Chrome\User Data\Default\Cache"
                 Clean-Path -Path $GoogleChromeCache -ComputerOBJ $ComputerOBJ
@@ -729,7 +739,7 @@ Function Get-AllUserProfiles{
                     $TempPath = "C:\Users\$Profile\AppData\Local\Temp"
                     $DownloadPath = "C:\Users\$Profile\Downloads"
                     Clean-Path -Path $TempPath -ComputerOBJ $ComputerOBJ
-                    Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ
+                    If($CleanDownloads -eq $true) { Clean-Path -Path $DownloadPath -ComputerOBJ $ComputerOBJ}
                     Write-host "Cleaning Google Chrome cache..." -ForegroundColor Yellow
                     $GoogleChromeCache = "C:\Users\$Profile\AppData\Local\Google\Chrome\User Data\Default\Cache"
                     Clean-Path -Path $GoogleChromeCache -ComputerOBJ $ComputerOBJ
@@ -744,4 +754,65 @@ Function Get-AllUserProfiles{
         }
     }
 
+}
+
+Clear-Host
+
+Foreach ($item in $ComputerList){
+
+$ComputerOBJ = New-object PSObject -Property @{
+            ComputerName = $item
+            Remote = $True
+        }
+
+Write-Host "Cleaning host " $ComputerOBJ.ComputerName -ForegroundColor Green 
+
+If($ComputerOBJ.Remote -eq $true){
+    $ComputerOBJ = Test-PSRemoting -ComputerOBJ $ComputerOBJ
+    If($ComputerOBJ.PSRemoting -eq $False){
+        Read-Host
+        exit;
+    }
+}
+
+$ComputerOBJ = Get-OrigFreeSpace -ComputerOBJ $ComputerOBJ
+
+If($ComputerOBJ.OrigFreeSpace -eq $False){
+    Read-host
+    exit;
+}
+
+Clean-path -Path 'C:\windows\Temp' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\windows\cmmcache' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\ProgramData\Dell\KACE' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\Windows\Logs\CBS' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportArchive' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\ProgramData\Microsoft\Windows\WER\ReportQueue' -ComputerOBJ $ComputerOBJ
+Clean-path -Path 'C:\ServiceProfiles\LocalService\AppData\Local\Temp' -ComputerOBJ $ComputerOBJ
+
+Write-Host "All Temp Paths have been cleaned" -ForegroundColor Green
+
+Write-Host "Beginning User Profile Cleanup" -ForegroundColor Yellow
+Get-AllUserProfiles -ComputerOBJ $ComputerOBJ
+Write-Host "All user profiles have been processed" -ForegroundColor Green
+
+If($CleanSymantec -eq $true) {TestFor-SymantecPath -ComputerOBJ $ComputerOBJ}
+If($RunCleanMGR -eq $true) {Run-CleanMGR -ComputerOBJ $ComputerOBJ}
+If($RunDISM -eq $true) {Run-DISM -ComputerOBJ $ComputerOBJ}
+If($CleanIIS -eq $true) {Process-IISLogs -ComputerOBJ $ComputerOBJ}
+Set-WindowsUpdateService -ComputerOBJ $ComputerOBJ
+If($CleanRecyclebin -eq $true) {Get-Recyclebin -ComputerOBJ $ComputerOBJ}
+
+$ComputerOBJ = Get-FinalFreeSpace -ComputerOBJ $ComputerOBJ
+$SpaceRecovered = $($Computerobj.finalfreespace) - $($ComputerOBJ.OrigFreeSpace)
+
+If($SpaceRecovered -lt 0){
+    Write-Host "Less than a gig of Free Space was recovered." -ForegroundColor Yellow
+}
+ElseIf($SpaceRecovered -eq 0){
+    Write-host "No Space Was saved :("
+}
+Else{
+    Write-host "Space Recovered : $SpaceRecovered GB" -ForegroundColor Green
+}
 }
